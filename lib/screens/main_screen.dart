@@ -1,4 +1,4 @@
-import 'package:cache_cleaner/entities/Application.dart';
+import 'package:cache_cleaner/entities/installed_application.dart';
 import 'package:cache_cleaner/entities/constants.dart';
 import 'package:device_apps/device_apps.dart';
 import 'package:flutter/material.dart';
@@ -56,9 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
         //   _apps.add(InstalledApplication(app));
         // }
 
-        for (var app in value) {
-          _apps.add(InstalledApplication(app as ApplicationWithIcon));
-        }
+        _apps = value.map((e) => InstalledApplication(e)).toList();
 
         _sortApps();
 
@@ -100,11 +98,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? Icons.check_box
                 : Icons.check_box_outline_blank,
             color: primaryTextColor),
-        onPressed: () => setState(() => {
-              for (var app in _apps) app.isSelected = value != _apps.length,
-              _selectedAppsCount.value =
-                  value != _apps.length ? _apps.length : 0,
-            }),
+        onPressed: () => {
+          for (var app in _apps) app.isSelected.value = value != _apps.length,
+          _selectedAppsCount.value = value != _apps.length ? _apps.length : 0,
+        },
       ),
     );
   }
@@ -244,16 +241,11 @@ class _HomeScreenState extends State<HomeScreen> {
         height: screenSize.height,
         child: RefreshIndicator(
           onRefresh: () => _init(),
-          child: SingleChildScrollView(
-            // make scroll view more smooth
-            physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics()),
-            child: Column(
-              children: [
-                for (var app in _apps) _buildCard(screenSize, app),
-                Container(height: screenSize.height * 0.1),
-              ],
-            ),
+          child: ListView.builder(
+            itemCount: _apps.length + 1,
+            itemBuilder: (context, index) => index == _apps.length
+                ? Container(height: screenSize.height * 0.1)
+                : _buildCard(screenSize, _apps[index]),
           ),
         ),
       ),
@@ -284,13 +276,17 @@ class _HomeScreenState extends State<HomeScreen> {
             Transform.scale(
               scale: 1.25,
               child: StatefulBuilder(
-                builder: (context, setState) => Checkbox(
-                  checkColor: secondaryTextColor,
-                  value: app.isSelected,
-                  onChanged: (value) => setState(() => {
-                        app.isSelected = value!,
-                        _selectedAppsCount.value += (app.isSelected ? 1 : -1),
-                      }),
+                builder: (context, setState) => ValueListenableBuilder<bool>(
+                  valueListenable: app.isSelected,
+                  builder: (context, value, _) => Checkbox(
+                    checkColor: secondaryTextColor,
+                    value: app.isSelected.value,
+                    onChanged: (value) => setState(() => {
+                          app.isSelected.value = value!,
+                          _selectedAppsCount.value +=
+                              (app.isSelected.value ? 1 : -1),
+                        }),
+                  ),
                 ),
               ),
             ),
@@ -318,7 +314,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
               image: DecorationImage(
-                image: Image.memory(app.app.icon).image,
+                image: app.icon.image,
                 fit: BoxFit.cover,
               ),
             ),
