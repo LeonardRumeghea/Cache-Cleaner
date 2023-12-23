@@ -1,8 +1,10 @@
 import 'package:cache_cleaner/entities/installed_application.dart';
 import 'package:cache_cleaner/entities/constants.dart';
+import 'package:cache_cleaner/services/theme_changer.dart';
 import 'package:device_apps/device_apps.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,7 +15,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
 // --------------------------------- Variables ----------------------------------
-  List<InstalledApplication> _apps = [];
+  List<InstalledApplication> _allApps = [];
+  List<InstalledApplication> _appsToDisplay = [];
 
   bool _areLoaded = false;
   final ValueNotifier<int> _selectedAppsCount = ValueNotifier(0);
@@ -21,6 +24,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _sortAscending = true;
   bool _sortByName = true;
   bool _sortByCacheSize = false;
+
+  bool _includeSystemApps = false;
 
 // --------------------------------- Init ----------------------------------
   @override
@@ -31,12 +36,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   _getPermission() async {
-    var storageStatus = await Permission.storage.status;
-    if (!storageStatus.isGranted) {
-      await Permission.storage.request();
-    }
-
     var externalStorageStatus = await Permission.manageExternalStorage.status;
+    print('Manage external storage permision:$externalStorageStatus');
     if (!externalStorageStatus.isGranted) {
       await Permission.manageExternalStorage.request();
     }
@@ -45,24 +46,32 @@ class _HomeScreenState extends State<HomeScreen> {
   _init() async {
     setState(() {
       _areLoaded = false;
-      _apps.clear();
+      _appsToDisplay.clear();
     });
 
     DeviceApps.getInstalledApplications(
-            includeAppIcons: true, includeSystemApps: false)
+            includeAppIcons: true, includeSystemApps: true)
         .then((value) {
       setState(() {
-        // for (var app in value.map((e) => e as ApplicationWithIcon).toList()) {
-        //   _apps.add(InstalledApplication(app));
-        // }
+        _allApps = value.map((e) => InstalledApplication(e)).toList();
+        _includeSystemAppsChanged(_includeSystemApps);
 
-        _apps = value.map((e) => InstalledApplication(e)).toList();
-
-        _sortApps();
-
-        _selectedAppsCount.value = _apps.length;
+        _selectedAppsCount.value = _appsToDisplay.length;
         _areLoaded = true;
       });
+    });
+  }
+
+  _includeSystemAppsChanged(bool value) {
+    setState(() {
+      _includeSystemApps = value;
+      _appsToDisplay =
+          _allApps.where((element) => element.isSystemApp == value).toList();
+      for (var element in _appsToDisplay) {
+        element.isSelected.value = true;
+      }
+      _selectedAppsCount.value = _appsToDisplay.length;
+      _sortApps();
     });
   }
 
@@ -70,11 +79,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     Size screenSize = MediaQuery.of(context).size;
+    ThemeChanger themeChanger = Provider.of<ThemeChanger>(context);
 
     return Scaffold(
       appBar: _getAppBar(),
       body: _getPageContent(screenSize),
       floatingActionButton: _buildFloatingActionButton(),
+      drawer: _getDrawer(themeChanger),
     );
   }
 
@@ -82,7 +93,8 @@ class _HomeScreenState extends State<HomeScreen> {
   AppBar _getAppBar() {
     return AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text('Cache Cleaner', style: TextStyle(color: primaryTextColor)),
+        title: Text('Cache Cleaner', style: TextStyle(color: appbarTextColor)),
+        iconTheme: IconThemeData(color: appbarTextColor),
         actions: [
           _getCheckAllButton(),
           _getSortPopupMenu(),
@@ -94,13 +106,15 @@ class _HomeScreenState extends State<HomeScreen> {
       valueListenable: _selectedAppsCount,
       builder: (context, value, _) => IconButton(
         icon: Icon(
-            value == _apps.length
+            value == _appsToDisplay.length
                 ? Icons.check_box
                 : Icons.check_box_outline_blank,
-            color: primaryTextColor),
+            color: appbarTextColor),
         onPressed: () => {
-          for (var app in _apps) app.isSelected.value = value != _apps.length,
-          _selectedAppsCount.value = value != _apps.length ? _apps.length : 0,
+          for (var app in _appsToDisplay)
+            app.isSelected.value = value != _appsToDisplay.length,
+          _selectedAppsCount.value =
+              value != _appsToDisplay.length ? _appsToDisplay.length : 0,
         },
       ),
     );
@@ -108,8 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   PopupMenuButton _getSortPopupMenu() {
     return PopupMenuButton(
-      icon: Icon(Icons.sort, color: primaryTextColor),
-      color: Colors.grey.shade900,
+      icon: Icon(Icons.sort, color: appbarTextColor),
       itemBuilder: (context) => [
         PopupMenuItem(
           child: Row(
@@ -123,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 'Sort by name',
                 style: TextStyle(
                     color: _sortByName ? primaryTextColor : unableTextColor,
-                    fontSize: 18),
+                    fontSize: popupMenuTextSize),
               ),
             ],
           ),
@@ -146,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(
                     color:
                         _sortByCacheSize ? primaryTextColor : unableTextColor,
-                    fontSize: 18),
+                    fontSize: popupMenuTextSize),
               ),
             ],
           ),
@@ -168,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 'Sort ascending',
                 style: TextStyle(
                     color: _sortAscending ? primaryTextColor : unableTextColor,
-                    fontSize: 18),
+                    fontSize: popupMenuTextSize),
               ),
             ],
           ),
@@ -189,7 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 'Sort descending',
                 style: TextStyle(
                     color: _sortAscending ? unableTextColor : primaryTextColor,
-                    fontSize: 18),
+                    fontSize: popupMenuTextSize),
               ),
             ],
           ),
@@ -209,14 +222,108 @@ class _HomeScreenState extends State<HomeScreen> {
         // TODO: implement cache cleaning
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cache cleaned successfully!'),
+          SnackBar(
+            // Text: x MB of cache cleaned
+            content: Text(
+              '${_getSelectedCacheSize().toStringAsFixed(2)} MB of cache memory was removed! 😁',
+              style: TextStyle(
+                  color: appbarTextColor, fontSize: secondaryTextSize),
+            ),
             backgroundColor: successColor,
           ),
         );
       },
       backgroundColor: Theme.of(context).colorScheme.primary,
-      child: Icon(Icons.delete, color: secondaryTextColor),
+      child: Icon(Icons.delete, color: appbarTextColor),
+    );
+  }
+
+  Widget _getDrawer(ThemeChanger themeChanger) {
+    return Drawer(
+      elevation: 1.5,
+      child: Column(
+        children: <Widget>[
+          DrawerHeader(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+              border: Border(
+                bottom: Divider.createBorderSide(context,
+                    color: Colors.transparent, width: 0.0),
+              ),
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              child: Text(
+                'Cache Cleaner',
+                style: TextStyle(color: appbarTextColor, fontSize: 32),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: <Widget>[
+                ListTile(
+                  leading: Icon(Icons.apps, color: primaryTextColor),
+                  title: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Include System Apps',
+                        style: TextStyle(color: primaryTextColor),
+                      ),
+                      Switch(
+                        value: _includeSystemApps,
+                        onChanged: (value) => {
+                          _includeSystemAppsChanged(value),
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                ListTile(
+                  leading: Icon(Icons.dark_mode, color: primaryTextColor),
+                  title: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Dark Mode',
+                        style: TextStyle(color: primaryTextColor),
+                      ),
+                      Switch(
+                        value: themeChanger.getTheme() == darkTheme,
+                        onChanged: (_) =>
+                            setState(() => themeChanger.toggleTheme()),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(10),
+            height: drawerBottomHeight(context),
+            child: ListTile(
+              leading: Icon(Icons.info, color: primaryTextColor),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'About',
+                    style: TextStyle(color: primaryTextColor),
+                  ),
+                  Text(
+                    "Version 1.0.0",
+                    style: TextStyle(color: secondaryTextColor),
+                  ),
+                ],
+              ),
+              onTap: () => {},
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -225,27 +332,28 @@ class _HomeScreenState extends State<HomeScreen> {
     return Center(
         child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
+      children: [
         _areLoaded
             ? Expanded(child: _buildAppList(screenSize))
-            : const CircularProgressIndicator()
+            : _showLoadingAnimation(),
       ],
     ));
   }
 
   Widget _buildAppList(Size screenSize) {
     return Padding(
-      padding: EdgeInsets.only(top: screenSize.height * 0.01),
+      padding: EdgeInsets.only(top: cardVerticalPadding(context)),
       child: SizedBox(
         width: screenSize.width,
         height: screenSize.height,
         child: RefreshIndicator(
           onRefresh: () => _init(),
           child: ListView.builder(
-            itemCount: _apps.length + 1,
-            itemBuilder: (context, index) => index == _apps.length
-                ? Container(height: screenSize.height * 0.1)
-                : _buildCard(screenSize, _apps[index]),
+            physics: const BouncingScrollPhysics(),
+            itemCount: _appsToDisplay.length + 1,
+            itemBuilder: (context, index) => index == _appsToDisplay.length
+                ? Container(height: cardHeight(context))
+                : _buildCard(screenSize, _appsToDisplay[index]),
           ),
         ),
       ),
@@ -254,20 +362,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCard(Size screenSize, InstalledApplication app) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: screenSize.height * 0.01),
+      padding: EdgeInsets.symmetric(
+        vertical: cardVerticalPadding(context),
+        horizontal: cardHorizontalPadding(context),
+      ),
       child: Container(
-        width: screenSize.width * 0.9,
-        height: screenSize.height * 0.1,
+        width: cardWidth(context),
+        height: cardHeight(context),
         decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 30, 30, 30),
-          borderRadius: BorderRadius.circular(10.0),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 5.0,
-              offset: Offset(0.0, 5.0),
-            ),
-          ],
+          color: cardGreyColor,
+          borderRadius: BorderRadius.circular(borderRadius),
+          boxShadow: const [cardBoxShadow],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -279,7 +384,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 builder: (context, setState) => ValueListenableBuilder<bool>(
                   valueListenable: app.isSelected,
                   builder: (context, value, _) => Checkbox(
-                    checkColor: secondaryTextColor,
+                    checkColor: appbarTextColor,
                     value: app.isSelected.value,
                     onChanged: (value) => setState(() => {
                           app.isSelected.value = value!,
@@ -302,23 +407,19 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         children: [
           Container(
-            width: screenSize.height * 0.06,
-            height: screenSize.height * 0.06,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10.0),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 5.0,
-                  offset: Offset(0.0, 5.0),
+              width: cardIconSize(context),
+              height: cardIconSize(context),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(borderRadius),
+                boxShadow: const [cardBoxShadow],
+                image: DecorationImage(
+                  image: app.icon.image,
+                  fit: BoxFit.cover,
                 ),
-              ],
-              image: DecorationImage(
-                image: app.icon.image,
-                fit: BoxFit.cover,
               ),
-            ),
-          ),
+              child: GestureDetector(
+                onTap: () => app.app.openSettingsScreen(),
+              )),
           SizedBox(width: screenSize.width * 0.025),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -330,14 +431,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     : app.app.appName,
                 style: TextStyle(
                   color: primaryTextColor,
-                  fontSize: 20,
+                  fontSize: primaryTextSize,
                 ),
               ),
               Text(
                 '${app.cacheSize.toStringAsFixed(2)} MB',
                 style: TextStyle(
                   color: secondaryTextColor,
-                  fontSize: 15,
+                  fontSize: secondaryTextSize,
                 ),
               ),
             ],
@@ -347,16 +448,40 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _showLoadingAnimation() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        CircularProgressIndicator(color: appbarTextColor),
+        const SizedBox(width: 20),
+        Text(
+          'Loading...',
+          style: TextStyle(color: appbarTextColor, fontSize: 20),
+        ),
+      ],
+    );
+  }
+
 // --------------------------------- Utilities ----------------------------------
   void _sortApps() {
     if (_sortByName) {
-      _apps.sort((a, b) => a.app.appName.compareTo(b.app.appName));
+      _appsToDisplay.sort((a, b) => a.app.appName.compareTo(b.app.appName));
     } else if (_sortByCacheSize) {
-      _apps.sort((a, b) => a.cacheSize.compareTo(b.cacheSize));
+      _appsToDisplay.sort((a, b) => a.cacheSize.compareTo(b.cacheSize));
     }
 
     if (!_sortAscending) {
-      _apps = _apps.reversed.toList();
+      _appsToDisplay = _appsToDisplay.reversed.toList();
     }
+  }
+
+  double _getSelectedCacheSize() {
+    double size = 0.0;
+    for (var app in _appsToDisplay) {
+      if (app.isSelected.value) {
+        size += app.cacheSize;
+      }
+    }
+    return size;
   }
 }

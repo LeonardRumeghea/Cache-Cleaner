@@ -1,4 +1,4 @@
-package com.example.cache_cleaner
+package com.cache_cleaner
 
 import io.flutter.embedding.android.FlutterActivity
 

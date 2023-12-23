@@ -33,6 +33,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.1"
+  change_app_package_name:
+    dependency: "direct dev"
+    description:
+      name: change_app_package_name
+      sha256: f9ebaf68a4b5a68c581492579bb68273c523ef325fbf9ce2f1b57fb136ad023b
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
   characters:
     dependency: transitive
     description:
@@ -179,6 +187,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.9.1"
+  nested:
+    dependency: transitive
+    description:
+      name: nested
+      sha256: "03bac4c528c64c95c722ec99280375a6f2fc708eec17c7b3f07253b626cd2a20"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   path:
     dependency: transitive
     description:
@@ -307,6 +323,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.7.3"
+  provider:
+    dependency: "direct main"
+    description:
+      name: provider
+      sha256: "9a96a0a19b594dbc5bf0f1f27d2bc67d5f95957359b461cd9feb44ed6ae75096"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.1.1"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -360,6 +384,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.0"
+  theme_mode_handler:
+    dependency: "direct main"
+    description:
+      name: theme_mode_handler
+      sha256: "06b08e58e66f80b89c4945a5883a85f7ceeb040056e8c559e1ccc0f2509309d5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.0"
   typed_data:
     dependency: transitive
     description:
