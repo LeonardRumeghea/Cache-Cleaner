@@ -233,6 +233,8 @@ class _HomeScreenState extends State<HomeScreen> {
             .map((app) => app.clearCache())
             .fold(0.0, (sum, value) => sum + value);
 
+        _sortApps();
+
         setState(() {});
 
         ScaffoldMessenger.of(context).showSnackBar(

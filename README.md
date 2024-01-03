@@ -1,16 +1,7 @@
-# cache_cleaner
+# Cache Cleaner
 
-A new Flutter project.
+Cache Cleaner is a utility program designed to improve mobile device storage space by managing and removing cached data produced by installed and system applications. The program searches the device for them and allows you to erase that memory quickly.
 
-## Getting Started
+## Previews
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- [03/01/2024: Demo of the First Release](https://youtu.be/LmW4YQp_ym0)
