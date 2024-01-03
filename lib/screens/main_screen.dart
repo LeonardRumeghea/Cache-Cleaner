@@ -15,7 +15,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
 // --------------------------------- Variables ----------------------------------
-  List<InstalledApplication> _allApps = [];
+  final List<InstalledApplication> _systemApps = [];
   List<InstalledApplication> _appsToDisplay = [];
 
   bool _areLoaded = false;
@@ -37,7 +37,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   _getPermission() async {
     var externalStorageStatus = await Permission.manageExternalStorage.status;
-    print('Manage external storage permision:$externalStorageStatus');
     if (!externalStorageStatus.isGranted) {
       await Permission.manageExternalStorage.request();
     }
@@ -46,17 +45,21 @@ class _HomeScreenState extends State<HomeScreen> {
   _init() async {
     setState(() {
       _areLoaded = false;
-      _appsToDisplay.clear();
     });
 
     DeviceApps.getInstalledApplications(
             includeAppIcons: true, includeSystemApps: true)
         .then((value) {
       setState(() {
-        _allApps = value.map((e) => InstalledApplication(e)).toList();
+        _systemApps.addAll(value
+            .where((app) => app.systemApp)
+            .map((app) => InstalledApplication(app)));
+        _appsToDisplay.addAll(value
+            .where((app) => !app.systemApp)
+            .map((app) => InstalledApplication(app)));
+
         _includeSystemAppsChanged(_includeSystemApps);
 
-        _selectedAppsCount.value = _appsToDisplay.length;
         _areLoaded = true;
       });
     });
@@ -65,11 +68,17 @@ class _HomeScreenState extends State<HomeScreen> {
   _includeSystemAppsChanged(bool value) {
     setState(() {
       _includeSystemApps = value;
-      _appsToDisplay =
-          _allApps.where((element) => element.isSystemApp == value).toList();
+
+      if (_includeSystemApps) {
+        _appsToDisplay.addAll(_systemApps);
+      } else {
+        _appsToDisplay.removeWhere((element) => element.isSystemApp);
+      }
+
       for (var element in _appsToDisplay) {
         element.isSelected.value = true;
       }
+
       _selectedAppsCount.value = _appsToDisplay.length;
       _sortApps();
     });
@@ -219,13 +228,17 @@ class _HomeScreenState extends State<HomeScreen> {
   FloatingActionButton _buildFloatingActionButton() {
     return FloatingActionButton(
       onPressed: () {
-        // TODO: implement cache cleaning
+        double clearedCache = _appsToDisplay
+            .where((app) => app.isSelected.value)
+            .map((app) => app.clearCache())
+            .fold(0.0, (sum, value) => sum + value);
+
+        setState(() {});
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            // Text: x MB of cache cleaned
             content: Text(
-              '${_getSelectedCacheSize().toStringAsFixed(2)} MB of cache memory was removed! 😁',
+              '${(clearedCache / 1000).toStringAsFixed(2)} GB of cache memory was removed!',
               style: TextStyle(
                   color: appbarTextColor, fontSize: secondaryTextSize),
             ),
@@ -347,20 +360,20 @@ class _HomeScreenState extends State<HomeScreen> {
         width: screenSize.width,
         height: screenSize.height,
         child: RefreshIndicator(
-          onRefresh: () => _init(),
+          onRefresh: () => _recalculateSelectedAppsCacheSize(),
           child: ListView.builder(
             physics: const BouncingScrollPhysics(),
             itemCount: _appsToDisplay.length + 1,
             itemBuilder: (context, index) => index == _appsToDisplay.length
                 ? Container(height: cardHeight(context))
-                : _buildCard(screenSize, _appsToDisplay[index]),
+                : _buildCard(screenSize, _appsToDisplay[index], index),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildCard(Size screenSize, InstalledApplication app) {
+  Widget _buildCard(Size screenSize, InstalledApplication app, int idx) {
     return Padding(
       padding: EdgeInsets.symmetric(
         vertical: cardVerticalPadding(context),
@@ -418,7 +431,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               child: GestureDetector(
-                onTap: () => app.app.openSettingsScreen(),
+                onTap: () => DeviceApps.openAppSettings(app.packageName),
               )),
           SizedBox(width: screenSize.width * 0.025),
           Column(
@@ -426,9 +439,9 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                app.app.appName.length > nameMaxLength
-                    ? '${app.app.appName.substring(0, nameMaxLength)}...'
-                    : app.app.appName,
+                app.appName.length > nameMaxLength
+                    ? '${app.appName.substring(0, nameMaxLength)}...'
+                    : app.appName,
                 style: TextStyle(
                   color: primaryTextColor,
                   fontSize: primaryTextSize,
@@ -465,7 +478,8 @@ class _HomeScreenState extends State<HomeScreen> {
 // --------------------------------- Utilities ----------------------------------
   void _sortApps() {
     if (_sortByName) {
-      _appsToDisplay.sort((a, b) => a.app.appName.compareTo(b.app.appName));
+      _appsToDisplay.sort(
+          (a, b) => a.appName.toLowerCase().compareTo(b.appName.toLowerCase()));
     } else if (_sortByCacheSize) {
       _appsToDisplay.sort((a, b) => a.cacheSize.compareTo(b.cacheSize));
     }
@@ -475,13 +489,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  double _getSelectedCacheSize() {
-    double size = 0.0;
-    for (var app in _appsToDisplay) {
-      if (app.isSelected.value) {
-        size += app.cacheSize;
-      }
-    }
-    return size;
+  Future<void> _recalculateSelectedAppsCacheSize() async {
+    return Future.wait(_appsToDisplay
+            .where((element) => element.isSelected.value)
+            .map((e) => e.calculateCacheSize()))
+        .then((value) => setState(() => _sortApps()));
   }
 }
