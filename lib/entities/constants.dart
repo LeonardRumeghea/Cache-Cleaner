@@ -1,21 +1,5 @@
 import 'package:flutter/material.dart';
 
-ThemeData darkTheme = ThemeData(
-  colorScheme: const ColorScheme.dark(
-      primary: primaryColor, inversePrimary: primaryColor),
-  useMaterial3: true,
-);
-
-ThemeData lightTheme = ThemeData(
-  colorScheme: const ColorScheme.light(
-      primary: primaryColor, inversePrimary: primaryColor),
-  useMaterial3: true,
-);
-
-// const Color primaryColor = Color(0xFF0D47A1);
-const Color primaryColor = Color(0xFF36583C);
-const Color successColor = Color(0xFF76AA74);
-
 // ------------------ Text Color ------------------
 Color _primaryTextColorDark = Colors.grey.shade200;
 Color _secondaryTextColorDark = Colors.grey.shade400;
@@ -58,16 +42,28 @@ void changeTextColorTheme(bool isDark) {
   cardGreyColor = isDark ? _cardGreyColorDark : _cardGreyColorLight;
 }
 
+Color textColorByBackground(Color backgroundColor) {
+  return backgroundColor.computeLuminance() < 0.5
+      ? _primaryTextColorDark
+      : _primaryTextColoLight;
+}
+
 Size screenSize(BuildContext context) => MediaQuery.of(context).size;
+
 double cardWidth(BuildContext context) => screenSize(context).width * 0.9;
+
 double cardHeight(BuildContext context) => screenSize(context).height * 0.1;
+
 double cardIconSize(BuildContext context) => screenSize(context).height * 0.06;
+
 double cardVerticalPadding(BuildContext context) =>
     screenSize(context).height * 0.01;
+
 double cardHorizontalPadding(BuildContext context) =>
     screenSize(context).width * 0.05;
 
 double drawerBottomHeight(BuildContext context) =>
     screenSize(context).height * 0.085;
+
 double drawerBottomWidth(BuildContext context) =>
     screenSize(context).width * 0.9;

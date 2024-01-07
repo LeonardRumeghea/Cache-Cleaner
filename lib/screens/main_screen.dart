@@ -102,8 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
   AppBar _getAppBar() {
     return AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text('Cache Cleaner', style: TextStyle(color: appbarTextColor)),
-        iconTheme: IconThemeData(color: appbarTextColor),
+        title: const Text('Cache Cleaner'),
         actions: [
           _getCheckAllButton(),
           _getSortPopupMenu(),
@@ -115,10 +114,11 @@ class _HomeScreenState extends State<HomeScreen> {
       valueListenable: _selectedAppsCount,
       builder: (context, value, _) => IconButton(
         icon: Icon(
-            value == _appsToDisplay.length
-                ? Icons.check_box
-                : Icons.check_box_outline_blank,
-            color: appbarTextColor),
+          value == _appsToDisplay.length
+              ? Icons.check_box
+              : Icons.check_box_outline_blank,
+          color: primaryTextColor,
+        ),
         onPressed: () => {
           for (var app in _appsToDisplay)
             app.isSelected.value = value != _appsToDisplay.length,
@@ -131,94 +131,93 @@ class _HomeScreenState extends State<HomeScreen> {
 
   PopupMenuButton _getSortPopupMenu() {
     return PopupMenuButton(
-      icon: Icon(Icons.sort, color: appbarTextColor),
+      icon: Icon(Icons.sort, color: primaryTextColor),
       itemBuilder: (context) => [
         PopupMenuItem(
           child: Row(
             children: [
               Icon(
                 Icons.sort_by_alpha,
-                color: _sortByName ? primaryTextColor : unableTextColor,
+                color: _sortByName
+                    ? Theme.of(context).colorScheme.primary
+                    : unableTextColor,
               ),
               const SizedBox(width: 10),
               Text(
                 'Sort by name',
                 style: TextStyle(
-                    color: _sortByName ? primaryTextColor : unableTextColor,
-                    fontSize: popupMenuTextSize),
+                  color: _sortByName ? primaryTextColor : unableTextColor,
+                  fontSize: popupMenuTextSize,
+                ),
               ),
             ],
           ),
-          onTap: () => setState(() => {
-                _sortByName = true,
-                _sortByCacheSize = false,
-                _sortApps(),
-              }),
+          onTap: () => setState(() =>
+              {_sortByName = true, _sortByCacheSize = false, _sortApps()}),
         ),
         PopupMenuItem(
           child: Row(
             children: [
               Icon(
                 Icons.sort,
-                color: _sortByCacheSize ? primaryTextColor : unableTextColor,
+                color: _sortByCacheSize
+                    ? Theme.of(context).colorScheme.primary
+                    : unableTextColor,
               ),
               const SizedBox(width: 10),
               Text(
                 'Sort by cache size',
                 style: TextStyle(
-                    color:
-                        _sortByCacheSize ? primaryTextColor : unableTextColor,
-                    fontSize: popupMenuTextSize),
+                  color: _sortByCacheSize ? primaryTextColor : unableTextColor,
+                  fontSize: popupMenuTextSize,
+                ),
               ),
             ],
           ),
-          onTap: () => setState(() => {
-                _sortByName = false,
-                _sortByCacheSize = true,
-                _sortApps(),
-              }),
+          onTap: () => setState(() =>
+              {_sortByName = false, _sortByCacheSize = true, _sortApps()}),
         ),
         PopupMenuItem(
           child: Row(
             children: [
               Icon(
                 Icons.arrow_upward,
-                color: _sortAscending ? primaryTextColor : unableTextColor,
+                color: _sortAscending
+                    ? Theme.of(context).colorScheme.primary
+                    : unableTextColor,
               ),
               const SizedBox(width: 10),
               Text(
                 'Sort ascending',
                 style: TextStyle(
-                    color: _sortAscending ? primaryTextColor : unableTextColor,
-                    fontSize: popupMenuTextSize),
+                  color: _sortAscending ? primaryTextColor : unableTextColor,
+                  fontSize: popupMenuTextSize,
+                ),
               ),
             ],
           ),
-          onTap: () => setState(() => {
-                _sortAscending = true,
-                _sortApps(),
-              }),
+          onTap: () => setState(() => {_sortAscending = true, _sortApps()}),
         ),
         PopupMenuItem(
           child: Row(
             children: [
               Icon(
                 Icons.arrow_downward,
-                color: _sortAscending ? unableTextColor : primaryTextColor,
+                color: _sortAscending
+                    ? unableTextColor
+                    : Theme.of(context).colorScheme.primary,
               ),
               const SizedBox(width: 10),
               Text(
                 'Sort descending',
                 style: TextStyle(
-                    color: _sortAscending ? unableTextColor : primaryTextColor,
-                    fontSize: popupMenuTextSize),
+                  color: _sortAscending ? unableTextColor : primaryTextColor,
+                  fontSize: popupMenuTextSize,
+                ),
               ),
             ],
           ),
-          onTap: () => setState(() => {
-                _sortAscending = false,
-                _sortApps(),
-              }),
+          onTap: () => setState(() => {_sortAscending = false, _sortApps()}),
         ),
       ],
     );
@@ -242,14 +241,15 @@ class _HomeScreenState extends State<HomeScreen> {
             content: Text(
               '${(clearedCache / 1000).toStringAsFixed(2)} GB of cache memory was removed!',
               style: TextStyle(
-                  color: appbarTextColor, fontSize: secondaryTextSize),
+                  color: textColorByBackground(
+                      Theme.of(context).colorScheme.inversePrimary),
+                  fontSize: secondaryTextSize),
             ),
-            backgroundColor: successColor,
+            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
           ),
         );
       },
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      child: Icon(Icons.delete, color: appbarTextColor),
+      child: const Icon(Icons.delete),
     );
   }
 
@@ -260,17 +260,20 @@ class _HomeScreenState extends State<HomeScreen> {
         children: <Widget>[
           DrawerHeader(
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
+              color: Theme.of(context).colorScheme.inversePrimary,
               border: Border(
                 bottom: Divider.createBorderSide(context,
                     color: Colors.transparent, width: 0.0),
               ),
             ),
-            child: SizedBox(
+            child: const SizedBox(
               width: double.infinity,
-              child: Text(
-                'Cache Cleaner',
-                style: TextStyle(color: appbarTextColor, fontSize: 32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Cache Cleaner', style: TextStyle(fontSize: 32)),
+                ],
               ),
             ),
           ),
@@ -279,14 +282,11 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: EdgeInsets.zero,
               children: <Widget>[
                 ListTile(
-                  leading: Icon(Icons.apps, color: primaryTextColor),
+                  leading: const Icon(Icons.apps),
                   title: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Include System Apps',
-                        style: TextStyle(color: primaryTextColor),
-                      ),
+                      const Text('Include System Apps'),
                       Switch(
                         value: _includeSystemApps,
                         onChanged: (value) => {
@@ -297,18 +297,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 ListTile(
-                  leading: Icon(Icons.dark_mode, color: primaryTextColor),
+                  leading: const Icon(Icons.dark_mode),
                   title: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Dark Mode',
-                        style: TextStyle(color: primaryTextColor),
-                      ),
+                      const Text('Dark Mode'),
                       Switch(
-                        value: themeChanger.getTheme() == darkTheme,
-                        onChanged: (_) =>
-                            setState(() => themeChanger.toggleTheme()),
+                        value: themeChanger.isDarkMode(),
+                        onChanged: (_) => themeChanger.toggleTheme(),
                       ),
                     ],
                   ),
@@ -320,14 +316,11 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(10),
             height: drawerBottomHeight(context),
             child: ListTile(
-              leading: Icon(Icons.info, color: primaryTextColor),
+              leading: const Icon(Icons.info),
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'About',
-                    style: TextStyle(color: primaryTextColor),
-                  ),
+                  const Text('About'),
                   Text(
                     "Version 1.0.0",
                     style: TextStyle(color: secondaryTextColor),
@@ -356,20 +349,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildAppList(Size screenSize) {
-    return Padding(
-      padding: EdgeInsets.only(top: cardVerticalPadding(context)),
-      child: SizedBox(
-        width: screenSize.width,
-        height: screenSize.height,
-        child: RefreshIndicator(
-          onRefresh: () => _recalculateSelectedAppsCacheSize(),
-          child: ListView.builder(
-            physics: const BouncingScrollPhysics(),
-            itemCount: _appsToDisplay.length + 1,
-            itemBuilder: (context, index) => index == _appsToDisplay.length
-                ? Container(height: cardHeight(context))
-                : _buildCard(screenSize, _appsToDisplay[index], index),
-          ),
+    return SizedBox(
+      width: screenSize.width,
+      height: screenSize.height,
+      child: RefreshIndicator(
+        onRefresh: () => _recalculateSelectedAppsCacheSize(),
+        child: ListView.builder(
+          physics: const BouncingScrollPhysics(),
+          itemCount: _appsToDisplay.length + 1,
+          itemBuilder: (context, index) => index == _appsToDisplay.length
+              ? Container(height: cardHeight(context))
+              : _buildCard(screenSize, _appsToDisplay[index], index),
         ),
       ),
     );
@@ -399,7 +389,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 builder: (context, setState) => ValueListenableBuilder<bool>(
                   valueListenable: app.isSelected,
                   builder: (context, value, _) => Checkbox(
-                    checkColor: appbarTextColor,
                     value: app.isSelected.value,
                     onChanged: (value) => setState(() => {
                           app.isSelected.value = value!,
@@ -444,17 +433,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 app.appName.length > nameMaxLength
                     ? '${app.appName.substring(0, nameMaxLength)}...'
                     : app.appName,
-                style: TextStyle(
-                  color: primaryTextColor,
-                  fontSize: primaryTextSize,
-                ),
+                style: TextStyle(fontSize: primaryTextSize),
               ),
               Text(
                 '${app.cacheSize.toStringAsFixed(2)} MB',
                 style: TextStyle(
-                  color: secondaryTextColor,
-                  fontSize: secondaryTextSize,
-                ),
+                    color: secondaryTextColor, fontSize: secondaryTextSize),
               ),
             ],
           ),
@@ -464,15 +448,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _showLoadingAnimation() {
-    return Row(
+    return const Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        CircularProgressIndicator(color: appbarTextColor),
-        const SizedBox(width: 20),
-        Text(
-          'Loading...',
-          style: TextStyle(color: appbarTextColor, fontSize: 20),
-        ),
+        CircularProgressIndicator(),
+        SizedBox(width: 20),
+        Text('Loading...', style: TextStyle(fontSize: 20)),
       ],
     );
   }

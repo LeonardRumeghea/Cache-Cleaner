@@ -1,15 +1,17 @@
-import 'package:cache_cleaner/entities/constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 
 class ThemeChanger with ChangeNotifier {
-  ThemeData _themeData;
+  bool _isDarkMode;
 
-  ThemeChanger(this._themeData);
+  ThemeChanger(this._isDarkMode);
 
-  getTheme() => _themeData;
+  isDarkMode() => _isDarkMode;
 
-  void toggleTheme() {
-    _themeData = _themeData == darkTheme ? lightTheme : darkTheme;
+  void toggleTheme() async {
+    _isDarkMode = !_isDarkMode;
+    (await SharedPreferences.getInstance()).setBool('isDarkMode', _isDarkMode);
+
     notifyListeners();
   }
 }
