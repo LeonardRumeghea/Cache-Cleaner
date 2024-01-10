@@ -90,12 +90,14 @@ class _HomeScreenState extends State<HomeScreen> {
     Size screenSize = MediaQuery.of(context).size;
     ThemeChanger themeChanger = Provider.of<ThemeChanger>(context);
 
-    return Scaffold(
-      appBar: _getAppBar(),
-      body: _getPageContent(screenSize),
-      floatingActionButton: _buildFloatingActionButton(),
-      drawer: _getDrawer(themeChanger),
-    );
+    return !_areLoaded
+        ? _showLoadingAnimation()
+        : Scaffold(
+            appBar: _getAppBar(),
+            body: _getPageContent(screenSize),
+            floatingActionButton: _buildFloatingActionButton(),
+            drawer: _getDrawer(themeChanger),
+          );
   }
 
 // --------------------------------- AppBar Widgets ----------------------------------
@@ -322,7 +324,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   const Text('About'),
                   Text(
-                    "Version 1.0.0",
+                    "Version 1.0.1",
                     style: TextStyle(color: secondaryTextColor),
                   ),
                 ],
@@ -338,14 +340,11 @@ class _HomeScreenState extends State<HomeScreen> {
 // --------------------------------- Page Content ----------------------------------
   Widget _getPageContent(Size screenSize) {
     return Center(
-        child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _areLoaded
-            ? Expanded(child: _buildAppList(screenSize))
-            : _showLoadingAnimation(),
-      ],
-    ));
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [Expanded(child: _buildAppList(screenSize))],
+      ),
+    );
   }
 
   Widget _buildAppList(Size screenSize) {
@@ -448,12 +447,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _showLoadingAnimation() {
-    return const Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Stack(
       children: [
-        CircularProgressIndicator(),
-        SizedBox(width: 20),
-        Text('Loading...', style: TextStyle(fontSize: 20)),
+        Center(
+          child: CircleAvatar(
+            radius: MediaQuery.of(context).size.height * 0.1,
+            child: Image.asset('assets/icons/cache_cleaner_icon.png'),
+          ),
+        ),
+        Center(
+          child: ScaleTransition(
+            scale: const AlwaysStoppedAnimation(4.9),
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Theme.of(context).colorScheme.inversePrimary,
+            ),
+          ),
+        )
       ],
     );
   }
